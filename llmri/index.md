@@ -1,6 +1,6 @@
 <title>A Neuroscience inspired approach to examining the inner workings of large language models</title>
 
-Done as the final project for the [AI Safety Fundamentals Alignment course](https://aisafetyfundamentals.com/).
+This was written as part of the final project for the [AI Safety Fundamentals Alignment course](https://aisafetyfundamentals.com/), Spring 024 cohort.
 
 # Introduction
 
