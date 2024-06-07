@@ -21,7 +21,7 @@ The text is first split into a sequence of tokens, and each token is mapped to a
  
 Internally, the LLMs are composed of alternating *self-attention* and *multi-layer perceptron* (MLP) layers. Each of these layers has its own interesting internal structure, but I won't be considering it. I will only look at the final output of each of these layers, which always has the same shape,  $$(d_{\rm seq}, d_{\rm emb})$$. In the case of `LLama-3-8B` there are 64 of these layers, 32 of each kind. At this level of abstraction we can therefore think of set of activations of as a three-dimension tensor of shape $$(d_{\rm layer}, d_{\rm seq}, d_{\rm emb})$$. Actually, it will be useful to split this into two separate tensors [1] corresponding to the self-attention and MLP activations, each with $$d_{\rm layer}=32$$.
 
-I used the HuggingFace `transformers` python library to record these activation tensors when running over a few small dataset:
+I used the HuggingFace `transformers` python library to record these activation tensors when running over a few small datasets. The code used is in the `record_activations.py` file in [this github repository](https://github.com/fdrocha/llmri). The datasets are also present in there in the `activations` subdirectories. They are:
 
 - `en`: An English news headline dataset from the [Leipzig Corpora Collection](https://wortschatz.uni-leipzig.de/en/download).  Specifically the 2023 10K set from [here](https://wortschatz.uni-leipzig.de/en/download/English). A few samples:
 
@@ -151,24 +151,31 @@ For reference, recording all the activations for these took a couple of hours us
 
 Analysing the distributions of activation values reveals a consistent pattern: most values are highly concentrated around zero with heavy tails. The heavy tails make it difficult to plot informative histograms, so we look at empirical cumulative distribution functions (CDFs) instead. This is what they look like for the different datasets, with separate lines for the self-attention (`atn`) and MLP (`mlp`) parts
 
+<center>
 ![Activations Distribution](activation_distribution1.png)
+</center>
 
 They seem to have the same overall shape for different datasets and type (i.e., attention vs MLP), but with different scales. We can try to normalise the scale in different ways, for example by dividing each by their interquartile distance (i.e., the difference between 75th and 25th percentile)
 
+<center>
 ![Rescaled activations Distribution](activation_distribution2.png)
+</center>
 
 This shows broadly similar but non identical distributions across the different datasets.
 
 So far we looked at the distribution across all activations for a dataset. It interesting to also compare the distribution for each layer:
 
+<center>
 ![Activations by layer](activation_dist_by_layer.png)
+</center>
 
 Here we are looking only at the attention layers for the `en` dataset, but the picture is similar in other cases. As before, if we rescale by the interquartile distance we get similar distributions.
 
 For reference, this is how the interquartile distance changes from inner to outer layer for the two types of layers:
 
+<center>
 ![Inter-quartile distances](interquartile_distances.png)
-
+</center>
 
 # Visualising the LLM activations
 
@@ -176,10 +183,12 @@ Having collected our rescaled activations, we can think about displaying them as
 
 Here's an example, for the sentence "A \$26 million senior center is being built on Highway 80. Homeowners are remodeling their homes and are determined to stay." from the english news headline corpus:
 
- <video width=1200 controls>
+<center>
+<video width=1200 controls>
   <source src="mri_animation.mp4" type="video/mp4">
 Activation animation.
 </video>
+</center>
 
 A couple of notes about this animation:
 
@@ -189,26 +198,33 @@ A couple of notes about this animation:
 - Given the long-tailed nature of the activation distributions, if we plot the rescaled activations directly the resulting image will be very flat (corresponding to most values being near zero) and a few isolated peaks corresponding to outliers. To better capture the "dynamic range" of the data we replace the actual values of the activations in each plot, with their *ranks*. I.e., the minimum value gets mapped to 0 and the maximum value to 1, and everything else linearly in between and in order. All 2d images of activations in here have this ranking transformation applied before plotting. This transformation is *not* applied in any other contexts, it is only an aid to visualisation.
 - The color scale used is the "jet" color map from `matplotlib`, here are how the 0 to 1 values get mapped by it:
 
+<center>
 ![Jet Color Scale](jet-colormap.png)
+</center>
+
 - Using the $$\rm seq$$ dimension as time is a little misleading in that it makes think each token is treated independently and sequentially. In reality the LLM looks at all the tokens in its context window simultaneously and the role of the self-attention layers is to find which tokens are relevant to understand others in the text.
 
 
 The animation can be thought to be showing `Llama-3` "thinking" but it is at best illustrative, it does not seem to provide much insight. Not much seems to be changing from frame to frame, which suggests it might be interesting to take the average over the `\rm seq` dimension. Since at this level of abstraction it seems unlikely we will retain much information specific to a specific sentence, we also average over the text in each dataset. To save on computation time, and to keep an holdout sample, I only used the first 100 input texts in each dataset. After these reductions, each dataset becomes a pair of 32 by 4096 images. Here are two examples:
 
+<center>
 ![Average activation for 'en' dataset](avg_act_en.png)
 ![Average activation for 'py' dataset](avg_act_py.png)
+</center>
 
 Unfortunately, both pictures seem very similar and the same is true for other datasets. After some experimentation, I found that if instead of
 averaging the activations, we average their absolute value we get results that are a little more interesting. Note that since the average is very close to 0, this is approximately the same as taking the average absolute deviation. You get very similar pictures by using the standard deviation of the activations instead.
 
 This what that looks like for all the datasets:
 
+<center>
 ![Average absolute activation for 'en'](avg_abs_act_en.png)
 ![Average absolute activation for 'fr'](avg_abs_act_fr.png)
 ![Average absolute activation for 'po'](avg_abs_act_po.png)
 ![Average absolute activation for 'ha'](avg_abs_act_ha.png)
 ![Average absolute activation for 'py'](avg_abs_act_py.png)
 ![Average absolute activation for 'cp'](avg_abs_act_cp.png)
+</center>
 
 To be clear, what we are doing here is taking all the activations across (the first 100 entries in) each dataset, and averaging their absolute values over entry and $$\rm seq$$ dimension. It is interesting that these show significantly more structure than the simple average pictures. It is also striking that there seem to be some visually distinguishable aspects to the pictures for the different datasets. I.e., you can see that certain layers show more activity, and that they vary from dataset to dataset. 
 
@@ -216,15 +232,21 @@ To be clear, what we are doing here is taking all the activations across (the fi
 
 Looking at the pictures in the previous section, it is apparent that most of the interesting variation happens in the $$\rm layer$$ dimension, suggesting that we can further average over the $$\rm emb$$ dimension. This reduces our data characterising each dataset to a 64 number signature, 32 for attention layers and 32 for MLP layers. Here is what that looks like:
 
+<center>
 ![1D mean absolute activation](mean_abs_act_1d_all.png)
+</center>
 
 Here we see clearly that the overall shape is very similar for the different datasets but there are some differences. To make these more apparent, we can look at the relative difference of each "signature" to the average signature over each of them:
 
+<center>
 ![1D mean absolute activation relative differences](mean_abs_act_1d_all_rel.png)
+</center>
 
 Remarkably, these signatures seem to be characteristic of the overall dataset, not the specific sample chosen. Recall that all the data and figures so far are based exclusively on the first 100 entries in each dataset. We can compare the signature from these 1-100 entries to what you get if you use entries 101-200 to check if they are really a dataset characteristic
 
+<center>
 ![Comparison of signatures](mean_abs_act_1d_comp.png)
+</center>
 
 The lines with suffix `A` correspond to our initial 0-100 sample and those with `B` to 101-200. To emphasise, each line is using data with no overlap at all. The plot only shows results for the `en` and `py` datasets so as not to clutter the plots but the pattern extends to other datasets: the independent subsets of each dataset give results much closer to each other than samples from different datasets. This was a surprising find, the 64 number signature is a very coarse condensation of the activation data and there was no reason to expect it would so well capture high-level aspects such as language (human or programming) or prose versus poetry so well.
 
