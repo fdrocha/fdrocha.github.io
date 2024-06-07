@@ -3,8 +3,6 @@ layout: post
 title: A Neuroscience inspired approach to examining the inner workings of large language models
 ---
 
-Last update: {{ date }}
-
 This was written as part of the final project for the [AI Safety Fundamentals Alignment course](https://aisafetyfundamentals.com/), Spring 2024 cohort.
 
 # Introduction
@@ -178,7 +176,7 @@ Having collected our rescaled activations, we can think about displaying them as
 
 Here's an example, for the sentence "A \$26 million senior center is being built on Highway 80. Homeowners are remodeling their homes and are determined to stay." from the english news headline corpus:
 
- <video width=800 controls>
+ <video width=1200 controls>
   <source src="mri_animation.mp4" type="video/mp4">
 Activation animation.
 </video>
