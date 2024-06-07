@@ -1,6 +1,6 @@
 <title>A Neuroscience inspired approach to examining the inner workings of large language models</title>
 
-This was written as part of the final project for the [AI Safety Fundamentals Alignment course](https://aisafetyfundamentals.com/), Spring 024 cohort.
+This was written as part of the final project for the [AI Safety Fundamentals Alignment course](https://aisafetyfundamentals.com/), Spring 2024 cohort.
 
 # Introduction
 
@@ -14,9 +14,9 @@ Despite these limitations, neuroscience has managed to make considerable progres
 # Methodology
 
 LLMs use the [transformer](https://arxiv.org/abs/1706.03762) architecture. Their input is text and the final output is a probability distribution for the next token.
-The text is first split into a sequence of tokens, and each token is mapped to a vector in a space of large dimension $d_{\rm emb}$ (in the case of `Llama-3`, $d_{\rm emb} = 4096$). You can use inputs with number of tokens, up to a model dependent maximum context window. For a specific input text, the input to the LLM can be thought of as two-dimensional tensor with dimensions $(d_{\rm seq}, d_{\rm emb})$ where $d_{\rm seq}$ is the context length, i.e., the number of tokens in the text.
+The text is first split into a sequence of tokens, and each token is mapped to a vector in a space of large dimension $$d_{\rm emb}$$ (in the case of `Llama-3`, $$d_{\rm emb} = 4096$$). You can use inputs with number of tokens, up to a model dependent maximum context window. For a specific input text, the input to the LLM can be thought of as two-dimensional tensor with dimensions $$(d_{\rm seq}, d_{\rm emb})$$ where $$d_{\rm seq}$$ is the context length, i.e., the number of tokens in the text.
  
-Internally, the LLMs are composed of alternating *self-attention* and *multi-layer perceptron* (MLP) layers. Each of these layers has its own interesting internal structure, but I won't be considering it. I will only look at the final output of each of these layers, which always has the same shape,  $(d_{\rm seq}, d_{\rm emb})$. In the case of `LLama-3-8B` there are 64 of these layers, 32 of each kind. At this level of abstraction we can therefore think of set of activations of as a three-dimension tensor of shape $(d_{\rm layer}, d_{\rm seq}, d_{\rm emb})$. Actually, it will be useful to split this into two separate tensors [1] corresponding to the self-attention and MLP activations, each with $d_{\rm layer}=32$.
+Internally, the LLMs are composed of alternating *self-attention* and *multi-layer perceptron* (MLP) layers. Each of these layers has its own interesting internal structure, but I won't be considering it. I will only look at the final output of each of these layers, which always has the same shape,  $$(d_{\rm seq}, d_{\rm emb})$$. In the case of `LLama-3-8B` there are 64 of these layers, 32 of each kind. At this level of abstraction we can therefore think of set of activations of as a three-dimension tensor of shape $$(d_{\rm layer}, d_{\rm seq}, d_{\rm emb})$$. Actually, it will be useful to split this into two separate tensors [1] corresponding to the self-attention and MLP activations, each with $$d_{\rm layer}=32$$.
 
 I used the HuggingFace `transformers` python library to record these activation tensors when running over a few small dataset:
 
@@ -169,22 +169,25 @@ For reference, this is how the interquartile distance changes from inner to oute
 
 # Visualising the LLM activations
 
-Having collected our rescaled activations, we can think about displaying them as images. To deal with the fact that we have 3d tensors, we can treat the $\rm seq$ dimension as a time dimension and have an animation where each frame corresponds to a particular token in the input text.
+Having collected our rescaled activations, we can think about displaying them as images. To deal with the fact that we have 3d tensors, we can treat the $$\rm seq$$ dimension as a time dimension and have an animation where each frame corresponds to a particular token in the input text.
 
 Here's an example, for the sentence "A \$26 million senior center is being built on Highway 80. Homeowners are remodeling their homes and are determined to stay." from the english news headline corpus:
 
-![Animation](mri_animation.mp4)
+ <video controls>
+  <source src="mri_animation.mp4" type="video/mp4">
+Activation animation.
+</video>
 
 A couple of notes about this animation:
 
-- The x-axis corresponds to what we called the $\rm emb$ dimension above that has size 4096.
-- The y-axis corresponds to the $\rm layer$ dimension, with the inner-most layers at the top and the output layer at the bottom.
+- The x-axis corresponds to what we called the $$\rm emb$$ dimension above that has size 4096.
+- The y-axis corresponds to the $$\rm layer$$ dimension, with the inner-most layers at the top and the output layer at the bottom.
 - The activations are split into two sub-images, for the self-attention and the MLP layers. Note that these are interleaved in the actual network, but here we separate into two pieces.
 - Given the long-tailed nature of the activation distributions, if we plot the rescaled activations directly the resulting image will be very flat (corresponding to most values being near zero) and a few isolated peaks corresponding to outliers. To better capture the "dynamic range" of the data we replace the actual values of the activations in each plot, with their *ranks*. I.e., the minimum value gets mapped to 0 and the maximum value to 1, and everything else linearly in between and in order. All 2d images of activations in here have this ranking transformation applied before plotting. This transformation is *not* applied in any other contexts, it is only an aid to visualisation.
 - The color scale used is the "jet" color map from `matplotlib`, here are how the 0 to 1 values get mapped by it:
 
 ![Jet Color Scale](jet-colormap.png)
-- Using the $\rm seq$ dimension as time is a little misleading in that it makes think each token is treated independently and sequentially. In reality the LLM looks at all the tokens in its context window simultaneously and the role of the self-attention layers is to find which tokens are relevant to understand others in the text.
+- Using the $$\rm seq$$ dimension as time is a little misleading in that it makes think each token is treated independently and sequentially. In reality the LLM looks at all the tokens in its context window simultaneously and the role of the self-attention layers is to find which tokens are relevant to understand others in the text.
 
 
 The animation can be thought to be showing `Llama-3` "thinking" but it is at best illustrative, it does not seem to provide much insight. Not much seems to be changing from frame to frame, which suggests it might be interesting to take the average over the `\rm seq` dimension. Since at this level of abstraction it seems unlikely we will retain much information specific to a specific sentence, we also average over the text in each dataset. To save on computation time, and to keep an holdout sample, I only used the first 100 input texts in each dataset. After these reductions, each dataset becomes a pair of 32 by 4096 images. Here are two examples:
@@ -204,11 +207,11 @@ This what that looks like for all the datasets:
 ![Average absolute activation for 'py'](avg_abs_act_py.png)
 ![Average absolute activation for 'cp'](avg_abs_act_cp.png)
 
-To be clear, what we are doing here is taking all the activations across (the first 100 entries in) each dataset, and averaging their absolute values over entry and $\rm seq$ dimension. It is interesting that these show significantly more structure than the simple average pictures. It is also striking that there seem to be some visually distinguishable aspects to the pictures for the different datasets. I.e., you can see that certain layers show more activity, and that they vary from dataset to dataset. 
+To be clear, what we are doing here is taking all the activations across (the first 100 entries in) each dataset, and averaging their absolute values over entry and $$\rm seq$$ dimension. It is interesting that these show significantly more structure than the simple average pictures. It is also striking that there seem to be some visually distinguishable aspects to the pictures for the different datasets. I.e., you can see that certain layers show more activity, and that they vary from dataset to dataset. 
 
 # Dataset classification: fingerprinting text types
 
-Looking at the pictures in the previous section, it is apparent that most of the interesting variation happens in the $\rm layer$ dimension, suggesting that we can further average over the $\rm emb$ dimension. This reduces our data characterising each dataset to a 64 number signature, 32 for attention layers and 32 for MLP layers. Here is what that looks like:
+Looking at the pictures in the previous section, it is apparent that most of the interesting variation happens in the $$\rm layer$$ dimension, suggesting that we can further average over the $$\rm emb$$ dimension. This reduces our data characterising each dataset to a 64 number signature, 32 for attention layers and 32 for MLP layers. Here is what that looks like:
 
 ![1D mean absolute activation](mean_abs_act_1d_all.png)
 
@@ -452,7 +455,7 @@ To make this a little less subjective, let's compute the L1-distance (i.e., the 
 
 The values in the table were multiplied by 1000 for ease of display. This very clearly confirms our previous claim: the difference in signatures is minimised when the samples are taken from the same dataset. Furthermore, it is interesting to see that for instance, the C++ and Python datasets are considerably closer to each other than to the remaining datasets.
 
-We can go further and check if we can use the signatures to reliably classify individual text as is coming from each dataset. To be specific, we can take a single entry from one of our datasets and compute its signature by averaging over the absolute value of the activation over the $\rm seq$ and $\rm emb$ dimensions. We then compute the L1 distance to each of the signatures from the 0-100 samples of the different datasets and predict that the entry comes from the dataset with minimal distance. If we do this for the 101-200 samples, this is what category is predicted depending on the source dataset:
+We can go further and check if we can use the signatures to reliably classify individual text as is coming from each dataset. To be specific, we can take a single entry from one of our datasets and compute its signature by averaging over the absolute value of the activation over the $$\rm seq$$ and $$\rm emb$$ dimensions. We then compute the L1 distance to each of the signatures from the 0-100 samples of the different datasets and predict that the entry comes from the dataset with minimal distance. If we do this for the 101-200 samples, this is what category is predicted depending on the source dataset:
 
 <style type="text/css">
 #T_c95bb th {
