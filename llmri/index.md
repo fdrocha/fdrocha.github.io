@@ -149,13 +149,13 @@ For reference, recording all the activations for these took a couple of hours us
 
 Analysing the distributions of activation values reveals a consistent pattern: most values are highly concentrated around zero with heavy tails. The heavy tails make it difficult to plot informative histograms, so we look at empirical cumulative distribution functions (CDFs) instead. This is what they look like for the different datasets, with separate lines for the self-attention (`atn`) and MLP (`mlp`) parts
 
-<center>
+<center markdown="1">>
 ![Activations Distribution](activation_distribution1.png)
 </center>
 
 They seem to have the same overall shape for different datasets and type (i.e., attention vs MLP), but with different scales. We can try to normalise the scale in different ways, for example by dividing each by their interquartile distance (i.e., the difference between 75th and 25th percentile)
 
-<center>
+<center markdown="1">>
 ![Rescaled activations Distribution](activation_distribution2.png)
 </center>
 
@@ -163,7 +163,7 @@ This shows broadly similar but non identical distributions across the different 
 
 So far we looked at the distribution across all activations for a dataset. It interesting to also compare the distribution for each layer:
 
-<center>
+<center markdown="1">>
 ![Activations by layer](activation_dist_by_layer.png)
 </center>
 
@@ -171,7 +171,7 @@ Here we are looking only at the attention layers for the `en` dataset, but the p
 
 For reference, this is how the interquartile distance changes from inner to outer layer for the two types of layers:
 
-<center>
+<center markdown="1">>
 ![Inter-quartile distances](interquartile_distances.png)
 </center>
 
@@ -181,7 +181,7 @@ Having collected our rescaled activations, we can think about displaying them as
 
 Here's an example, for the sentence "A \$26 million senior center is being built on Highway 80. Homeowners are remodeling their homes and are determined to stay." from the english news headline corpus:
 
-<center>
+<center markdown="1">>
 <video width=1200 controls>
   <source src="mri_animation.mp4" type="video/mp4">
 Activation animation.
@@ -196,7 +196,7 @@ A couple of notes about this animation:
 - Given the long-tailed nature of the activation distributions, if we plot the rescaled activations directly the resulting image will be very flat (corresponding to most values being near zero) and a few isolated peaks corresponding to outliers. To better capture the "dynamic range" of the data we replace the actual values of the activations in each plot, with their *ranks*. I.e., the minimum value gets mapped to 0 and the maximum value to 1, and everything else linearly in between and in order. All 2d images of activations in here have this ranking transformation applied before plotting. This transformation is *not* applied in any other contexts, it is only an aid to visualisation.
 - The color scale used is the "jet" color map from `matplotlib`, here are how the 0 to 1 values get mapped by it:
 
-<center>
+<center markdown="1">>
 ![Jet Color Scale](jet-colormap.png)
 </center>
 
@@ -205,7 +205,7 @@ A couple of notes about this animation:
 
 The animation can be thought to be showing `Llama-3` "thinking" but it is at best illustrative, it does not seem to provide much insight. Not much seems to be changing from frame to frame, which suggests it might be interesting to take the average over the `\rm seq` dimension. Since at this level of abstraction it seems unlikely we will retain much information specific to a specific sentence, we also average over the text in each dataset. To save on computation time, and to keep an holdout sample, I only used the first 100 input texts in each dataset. After these reductions, each dataset becomes a pair of 32 by 4096 images. Here are two examples:
 
-<center>
+<center markdown="1">>
 ![Average activation for 'en' dataset](avg_act_en.png)
 ![Average activation for 'py' dataset](avg_act_py.png)
 </center>
@@ -215,7 +215,7 @@ averaging the activations, we average their absolute value we get results that a
 
 This what that looks like for all the datasets:
 
-<center>
+<center markdown="1">>
 ![Average absolute activation for 'en'](avg_abs_act_en.png)
 ![Average absolute activation for 'fr'](avg_abs_act_fr.png)
 ![Average absolute activation for 'po'](avg_abs_act_po.png)
@@ -230,19 +230,19 @@ To be clear, what we are doing here is taking all the activations across (the fi
 
 Looking at the pictures in the previous section, it is apparent that most of the interesting variation happens in the $$\rm layer$$ dimension, suggesting that we can further average over the $$\rm emb$$ dimension. This reduces our data characterising each dataset to a 64 number signature, 32 for attention layers and 32 for MLP layers. Here is what that looks like:
 
-<center>
+<center markdown="1">>
 ![1D mean absolute activation](mean_abs_act_1d_all.png)
 </center>
 
 Here we see clearly that the overall shape is very similar for the different datasets but there are some differences. To make these more apparent, we can look at the relative difference of each "signature" to the average signature over each of them:
 
-<center>
+<center markdown="1">>
 ![1D mean absolute activation relative differences](mean_abs_act_1d_all_rel.png)
 </center>
 
 Remarkably, these signatures seem to be characteristic of the overall dataset, not the specific sample chosen. Recall that all the data and figures so far are based exclusively on the first 100 entries in each dataset. We can compare the signature from these 1-100 entries to what you get if you use entries 101-200 to check if they are really a dataset characteristic
 
-<center>
+<center markdown="1">>
 ![Comparison of signatures](mean_abs_act_1d_comp.png)
 </center>
 
@@ -404,7 +404,7 @@ To make this a little less subjective, let's compute the L1-distance (i.e., the 
   font-weight: bold;
 }
 </style>
-<center>
+<center markdown="1">>
 <table id="T_bb713">
   <thead>
     <tr>
@@ -574,7 +574,7 @@ We can go further and check if we can use the signatures to reliably classify in
   font-weight: bold;
 }
 </style>
-<center>
+<center markdown="1">>
 <table id="T_c95bb">
   <thead>
     <tr>
