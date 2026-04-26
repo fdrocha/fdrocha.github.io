@@ -1,25 +1,25 @@
 ---
 layout: post
-title: A Neuroscience inspired approach to examining the inner workings of large language models
+title: A neuroscience-inspired approach to examining the inner workings of large language models
 ---
 
 This was written as part of the final project for the [AI Safety Fundamentals Alignment course](https://aisafetyfundamentals.com/), Spring 2024 cohort.
 
 # Introduction
 
-When trying to understand artificial neural networks (ANNs) you have access to complete information on all its components: topology, activation functions, connection weights and activations. You can easily do interventions such as modifying activations of individual neurons or the weights of the connections between them. The task is by no means easy in spite of this, but this level of access to the internals is something only dreamed of in neuroscience which aims to understand biological neural networks (BNNs).
+When trying to understand artificial neural networks (ANNs), you have access to complete information on all of its components: topology, activation functions, connection weights and activations. You can easily do interventions such as modifying activations of individual neurons or the weights of the connections between them. The task is by no means easy in spite of this, but this level of access to the internals is something only dreamed of in neuroscience, which aims to understand biological neural networks (BNNs).
 
-In neuroscience, regarding topology, simple organisms such as *C. Elegans* and larval fruit flies have had their BNN's topology (often referred to as the *connectome* in the field) completely mapped, and there are ongoing efforts to scale this up to larger organisms. However, mapping the full connectome of a human brain remains a distant goal. The behaviour of individual biological neurons is in a sense the analogue of activation functions and connection weights. It is much more complex than that of its artificial counterparts and still not completely understood. In regards to activations, it is very hard to get data at the level of individual neurons at scale but you can obtain spatial and temporally averaged data using techniques such as functional Magnetic Resonance Imaging (fMRI) and Positron Emission Tomography (PET) to measure dynamic concentrations of oxygen or glicose molecules, which are a proxy for neural activity.
+In neuroscience, regarding topology, simple organisms such as *C. Elegans* and larval fruit flies have had their BNN's topology (often referred to as the *connectome* in the field) completely mapped, and there are ongoing efforts to scale this up to larger organisms. However, mapping the full connectome of a human brain remains a distant goal. The behaviour of individual biological neurons is in a sense the analogue of activation functions and connection weights. It is much more complex than that of its artificial counterparts and still not completely understood. In regards to activations, it is very hard to get data at the level of individual neurons at scale but you can obtain spatially and temporally averaged data using techniques such as functional Magnetic Resonance Imaging (fMRI) and Positron Emission Tomography (PET) to measure dynamic concentrations of oxygen or glucose molecules, which are a proxy for neural activity.
 
-Despite these limitations, neuroscience has managed to make considerable progress in the understanding of brains (although, obviously, it is still very incomplete). My goal in this study was to do a quick exploration of restricting ourselves to something analogous to the toolset of neuroscience and look only at activations of ANNs and averages of their values. I looked at a subset of the activations of a Large Language Model, specifically [Meta-Llama-3-8B-Instruct](https://ai.meta.com/blog/meta-llama-3/) when doing inference on different flavours of text. The `Meta-Llama-3` family of models are some of the most capable available open weights models. I used the smaller `8B` parameter simply because it was the only one I could easily run on my laptop, but everything done can easily be generalised to larger or just different LLMs.
+Despite these limitations, neuroscience has managed to make considerable progress in the understanding of brains (although, obviously, it is still very incomplete). My goal in this study was to explore what happens when we restrict ourselves to something analogous to the toolset of neuroscience and look only at activations of ANNs and averages of their values. I looked at a subset of the activations of a Large Language Model, specifically [Meta-Llama-3-8B-Instruct](https://ai.meta.com/blog/meta-llama-3/) when doing inference on different flavours of text. The `Meta-Llama-3` family of models are some of the most capable available open-weights models. I used the smaller `8B` parameter simply because it was the only one I could easily run on my laptop, but everything done can easily be generalised to larger or just different LLMs.
 
 
 # Methodology
 
 LLMs use the [transformer](https://arxiv.org/abs/1706.03762) architecture. Their input is text and the final output is a probability distribution for the next token.
-The text is first split into a sequence of tokens, and each token is mapped to a vector in a space of large dimension $$d_{\rm emb}$$ (in the case of `Llama-3`, $$d_{\rm emb} = 4096$$). You can use inputs with number of tokens, up to a model dependent maximum context window. For a specific input text, the input to the LLM can be thought of as two-dimensional tensor with dimensions $$(d_{\rm seq}, d_{\rm emb})$$ where $$d_{\rm seq}$$ is the context length, i.e., the number of tokens in the text.
+The text is first split into a sequence of tokens, and each token is mapped to a vector in a space of large dimension $$d_{\rm emb}$$ (in the case of `Llama-3`, $$d_{\rm emb} = 4096$$). You can use inputs with any number of tokens, up to a model-dependent maximum context window. For a specific input text, the input to the LLM can be thought of as two-dimensional tensor with dimensions $$(d_{\rm seq}, d_{\rm emb})$$ where $$d_{\rm seq}$$ is the context length, i.e., the number of tokens in the text.
  
-Internally, the LLMs are composed of alternating *self-attention* and *multi-layer perceptron* (MLP) layers. Each of these layers has its own interesting internal structure, but I won't be considering it. I will only look at the final output of each of these layers, which always has the same shape,  $$(d_{\rm seq}, d_{\rm emb})$$. In the case of `LLama-3-8B` there are 64 of these layers, 32 of each kind. At this level of abstraction we can therefore think of set of activations of as a three-dimension tensor of shape $$(d_{\rm layer}, d_{\rm seq}, d_{\rm emb})$$. Actually, it will be useful to split this into two separate tensors [1] corresponding to the self-attention and MLP activations, each with $$d_{\rm layer}=32$$.
+Internally, the LLMs are composed of alternating *self-attention* and *multi-layer perceptron* (MLP) layers. Each of these layers has its own interesting internal structure, but I won't be considering it. I will only look at the final output of each of these layers, which always has the same shape,  $$(d_{\rm seq}, d_{\rm emb})$$. In the case of `Llama-3-8B` there are 64 of these layers, 32 of each kind. At this level of abstraction we can therefore think of the set of activations as a three-dimensional tensor of shape $$(d_{\rm layer}, d_{\rm seq}, d_{\rm emb})$$. Actually, it will be useful to split this into two separate tensors [1] corresponding to the self-attention and MLP activations, each with $$d_{\rm layer}=32$$.
 
 I used the HuggingFace `transformers` python library to record these activation tensors when running over a few small datasets. The code used is in the `record_activations.py` file in [this github repository](https://github.com/fdrocha/llmri). The datasets are also present in there in the `activations` subdirectories. They are:
 
@@ -91,7 +91,7 @@ N=[4],
 ```
 
 
-- `cp`: A C++ dataset, obtained in same way. Examples:
+- `cp`: A C++ dataset, obtained in the same way. Examples:
 
 ```c++
 if (algorithm == BINARY_SEARCH) {
@@ -149,27 +149,27 @@ For reference, recording all the activations for these took a couple of hours us
 
 # Distribution of the activation values
 
-Analysing the distributions of activation values reveals a consistent pattern: most values are highly concentrated around zero with heavy tails. The heavy tails make it difficult to plot informative histograms, so we look at empirical cumulative distribution functions (CDFs) instead. This is what they look like for the different datasets, with separate lines for the self-attention (`atn`) and MLP (`mlp`) parts
+Analysing the distributions of activation values reveals a consistent pattern: most values are highly concentrated around zero with heavy tails. The heavy tails make it difficult to plot informative histograms, so we look at empirical cumulative distribution functions (CDFs) instead. This is what they look like for the different datasets, with separate lines for the self-attention (`atn`) and MLP (`mlp`) parts:
 
 <center>
 <img src="activation_distribution.png" alt="Activations Distribution">
 </center>
 
-They seem to have the same overall shape for different datasets and type (i.e., attention vs MLP), but with different scales. We can try to normalise the scale in different ways, for example by dividing each by their interquartile distance (i.e., the difference between 75th and 25th percentile)
+They seem to have the same overall shape for different datasets and type (i.e., attention vs MLP), but with different scales. We can try to normalise the scale in different ways, for example by dividing each by their interquartile distance (i.e., the difference between 75th and 25th percentile):
 
 <center>
 <img src="activation_distribution2.png" alt="Rescaled activations Distribution">
 </center>
 
-This shows broadly similar but non identical distributions across the different datasets.
+This shows broadly similar but non-identical distributions across the different datasets.
 
-So far we looked at the distribution across all activations for a dataset. It interesting to also compare the distribution for each layer:
+So far we looked at the distribution across all activations for a dataset. It is also interesting to compare the distribution for each layer:
 
 <center>
 <img src="activation_dist_by_layer.png" alt="Activations by layer">
 </center>
 
-Here we are looking only at the attention layers for the `en` dataset, but the picture is similar in other cases. As before, if we rescale by the interquartile distance we get similar distributions.
+Here we are looking only at the attention layers for the `en` dataset, but the picture is similar in other cases. As before, if we rescale by the interquartile distance, we get similar distributions.
 
 For reference, this is how the interquartile distance changes from inner to outer layer for the two types of layers:
 
@@ -184,7 +184,7 @@ Having collected our rescaled activations, we can think about displaying them as
 Here's an example, for the sentence "A \$26 million senior center is being built on Highway 80. Homeowners are remodeling their homes and are determined to stay." from the english news headline corpus:
 
 <center>
-<video controls>
+<video width="100%" controls>
   <source src="mri_animation.mp4" type="video/mp4">
 Activation animation.
 </video>
@@ -196,16 +196,16 @@ A couple of notes about this animation:
 - The y-axis corresponds to the $$\rm layer$$ dimension, with the inner-most layers at the top and the output layer at the bottom.
 - The activations are split into two sub-images, for the self-attention and the MLP layers. Note that these are interleaved in the actual network, but here we separate into two pieces.
 - Given the long-tailed nature of the activation distributions, if we plot the rescaled activations directly the resulting image will be very flat (corresponding to most values being near zero) and a few isolated peaks corresponding to outliers. To better capture the "dynamic range" of the data we replace the actual values of the activations in each plot, with their *ranks*. I.e., the minimum value gets mapped to 0 and the maximum value to 1, and everything else linearly in between and in order. All 2d images of activations in here have this ranking transformation applied before plotting. This transformation is *not* applied in any other contexts, it is only an aid to visualisation.
-- The color scale used is the "jet" color map from `matplotlib`, here are how the 0 to 1 values get mapped by it:
+- The color scale used is the "jet" color map from `matplotlib`, here is how the 0 to 1 values get mapped by it:
 
 <center>
 <img src="jet-colormap.png" alt="Jet Color Scale">
 </center>
 
-- Using the $$\rm seq$$ dimension as time is a little misleading in that it makes think each token is treated independently and sequentially. In reality the LLM looks at all the tokens in its context window simultaneously and the role of the self-attention layers is to find which tokens are relevant to understand others in the text.
+- Using the $$\rm seq$$ dimension as time is a little misleading in that it makes it seem like each token is treated independently and sequentially. In reality the LLM looks at all the tokens in its context window simultaneously and the role of the self-attention layers is to find which tokens are relevant to understand others in the text.
 
 
-The animation can be thought to be showing `Llama-3` "thinking" but it is at best illustrative, it does not seem to provide much insight. Not much seems to be changing from frame to frame, which suggests it might be interesting to take the average over the `\rm seq` dimension. Since at this level of abstraction it seems unlikely we will retain much information specific to a specific sentence, we also average over the text in each dataset. To save on computation time, and to keep an holdout sample, I only used the first 100 input texts in each dataset. After these reductions, each dataset becomes a pair of 32 by 4096 images. Here are two examples:
+The animation can be thought to be showing `Llama-3` "thinking" but it is at best illustrative, it does not seem to provide much insight. Not much seems to be changing from frame to frame, which suggests it might be interesting to take the average over the $$\rm seq$$ dimension. Since at this level of abstraction it seems unlikely we will retain much information specific to a specific sentence, we also average over the text in each dataset. To save on computation time, and to keep an holdout sample, I only used the first 100 input texts in each dataset. After these reductions, each dataset becomes a pair of 32 by 4096 images. Here are two examples:
 
 <center>
 <img src="avg_act_en.png" alt="Average activation for 'en' dataset">
@@ -230,25 +230,25 @@ To be clear, what we are doing here is taking all the activations across (the fi
 
 # Dataset classification: fingerprinting text types
 
-Looking at the pictures in the previous section, it is apparent that most of the interesting variation happens in the $$\rm layer$$ dimension, suggesting that we can further average over the $$\rm emb$$ dimension. This reduces our data characterising each dataset to a 64 number signature, 32 for attention layers and 32 for MLP layers. Here is what that looks like:
+Looking at the pictures in the previous section, it is apparent that most of the interesting variation happens in the $$\rm layer$$ dimension, suggesting that we can further average over the $$\rm emb$$ dimension. This reduces our data characterising each dataset to a 64-number signature, 32 for attention layers and 32 for MLP layers. Here is what that looks like:
 
 <center>
 <img src="mean_abs_act_1d_all.png" alt="1D mean absolute activation">
 </center>
 
-Here we see clearly that the overall shape is very similar for the different datasets but there are some differences. To make these more apparent, we can look at the relative difference of each "signature" to the average signature over each of them:
+Here we see clearly that the overall shape is very similar for the different datasets but there are some differences. To make these more apparent, we can look at the relative difference of each "signature" from the mean across all datasets:
 
 <center>
 <img src="mean_abs_act_1d_all_rel.png" alt="1D mean absolute activation relative differences">
 </center>
 
-Remarkably, these signatures seem to be characteristic of the overall dataset, not the specific sample chosen. Recall that all the data and figures so far are based exclusively on the first 100 entries in each dataset. We can compare the signature from these 1-100 entries to what you get if you use entries 101-200 to check if they are really a dataset characteristic
+Remarkably, these signatures seem to be characteristic of the overall dataset, not the specific sample chosen. Recall that all the data and figures so far are based exclusively on the first 100 entries in each dataset. We can compare the signature from these 1-100 entries to what you get if you use entries 101-200 to check if they are really a dataset characteristic.
 
 <center>
 <img src="mean_abs_act_1d_comp.png" alt="Comparison of signatures">
 </center>
 
-The lines with suffix `A` correspond to our initial 0-100 sample and those with `B` to 101-200. To emphasise, each line is using data with no overlap at all. The plot only shows results for the `en` and `py` datasets so as not to clutter the plots but the pattern extends to other datasets: the independent subsets of each dataset give results much closer to each other than samples from different datasets. This was a surprising find, the 64 number signature is a very coarse condensation of the activation data and there was no reason to expect it would so well capture high-level aspects such as language (human or programming) or prose versus poetry so well.
+The lines with suffix `A` correspond to our initial 0-100 sample and those with `B` to 101-200. To emphasise, each line is using data with no overlap at all. The plot only shows results for the `en` and `py` datasets so as not to clutter the plots but the pattern extends to other datasets: the independent subsets of each dataset give results much closer to each other than samples from different datasets. This was a surprising find: the 64-number signature is a very coarse condensation of the activation data and there was no reason to expect it would capture high-level aspects such as language (human or programming) or prose versus poetry so well.
 
 To make this a little less subjective, let's compute the L1-distance (i.e., the sum of the absolute value of the difference of the 64 values) between the `A` and `B` versions of each dataset. This is what we see:
 
@@ -661,6 +661,6 @@ This works surprisingly well for such a simple-minded approach, it picks the rig
 
 # Conclusion
 
-We looked at some properties of the activations of a particular LLM, `LLama3-8B-instruct` when doing inference over a few different small datasets. We created some illustrative visualisations of this data and found that we can produce a "signature" composed of a number for each layer of the LLM that captures characteristics of the text being consumed. These signatures are enough to reliably classify the type of text being run through the LLM. This was only a shallow exploration of what can be learned from looking at activation values alone and it seems likely that more could be found using this approach.
+We looked at some properties of the activations of a particular LLM, `Llama-3-8B-Instruct` when doing inference over a few different small datasets. We created some illustrative visualisations of this data and found that we can produce a "signature" composed of a number for each layer of the LLM that captures characteristics of the text being consumed. These signatures are enough to reliably classify the type of text being run through the LLM. This was only a shallow exploration of what can be learned from looking at activation values alone and it seems likely that more could be found using this approach.
 
 
