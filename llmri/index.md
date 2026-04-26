@@ -63,14 +63,16 @@ la main à l’issue de l’actuelle enveloppe courant jusqu’en 2027.
 
 
 ```python
-codegen.foreach(d.values())\nkeys = tuple(d.keys())
+codegen.foreach(d.values())
+keys = tuple(d.keys())
 codegen.extend_output(codegen.create_call_function_kw(len(keys), keys, True))
 
-def call_method(\nself,\ntx,\nname,\nargs: "List[VariableTracker]",
+def call_method(self, tx,name,args: "List[VariableTracker]",
 ```
 
 ```python
-foo_s = torch.jit.script(foo)\nFileCheck().check("aten::var").run(foo_s.graph)
+foo_s = torch.jit.script(foo)
+FileCheck().check("aten::var").run(foo_s.graph)
 torch._C._jit_pass_run_decompositions(foo_s.graph)
 inp = torch.rand([10, 10])
 self.assertEqual(foo(inp), foo_s(inp))
@@ -81,7 +83,7 @@ cross_product_configs={"device": ["cpu", "cuda"],},
 tags=["short"],)
 
 
-conv_2d_configs_long = op_bench.cross_product_configs(\nIC=[128, 256],
+conv_2d_configs_long = op_bench.cross_product_configs(IC=[128, 256],
 OC=[128, 256],
 kernel=[3],
 stride=[1, 2],
@@ -182,7 +184,7 @@ Having collected our rescaled activations, we can think about displaying them as
 Here's an example, for the sentence "A \$26 million senior center is being built on Highway 80. Homeowners are remodeling their homes and are determined to stay." from the english news headline corpus:
 
 <center>
-<video width=1200 controls>
+<video controls>
   <source src="mri_animation.mp4" type="video/mp4">
 Activation animation.
 </video>
@@ -213,9 +215,9 @@ The animation can be thought to be showing `Llama-3` "thinking" but it is at bes
 Unfortunately, both pictures seem very similar and the same is true for other datasets. After some experimentation, I found that if instead of
 averaging the activations, we average their absolute value we get results that are a little more interesting. Note that since the average is very close to 0, this is approximately the same as taking the average absolute deviation. You get very similar pictures by using the standard deviation of the activations instead.
 
-This what that looks like for all the datasets:
+This is what that looks like for all the datasets:
 
-<center
+<center>
 <img src="avg_abs_act_en.png" alt="Average absolute activation for 'en' dataset">
 <img src="avg_abs_act_fr.png" alt="Average absolute activation for 'fr' dataset">
 <img src="avg_abs_act_po.png" alt="Average absolute activation for 'po' dataset">
